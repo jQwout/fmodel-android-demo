@@ -4,19 +4,13 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.fraktalio.fmodel.application.EventSourcingAggregate
-import com.fraktalio.fmodel.application.handle
 import fraktal.io.android.demo.timer.domain.timerDecider
 import fraktal.io.android.demo.theme.DemoAndroidTheme
+import fraktal.io.android.demo.timer.domain.TimerCommand
+import fraktal.io.android.demo.timer.domain.TimerEvent
+import fraktal.io.android.demo.timer.ui.TimerStateMapper
 import fraktal.io.android.demo.timer.ui.TimerView
+import fraktal.io.android.demo.timer.ui.TimerViewState
 import fraktal.io.android.demo.timer.ui.TimerViewStateMapper
 import fraktal.io.ext.Reducer
 import kotlinx.coroutines.CoroutineScope
@@ -36,9 +30,14 @@ class MainActivity : ComponentActivity() {
 
 
 object DI {
-    val timerReducer = Reducer(
-        decider = timerDecider(),
+    // Feel free to use Mapper functions on the Decider here.
+    // Notice how you need to provide two Map functions, in both direction (from TimerViewState to TimerState, and from TimerState to TimerViewState)
+    private val timerDecider =
+        timerDecider().dimapOnState(::TimerStateMapper, ::TimerViewStateMapper)
+
+    //At this point the Reducer is aware only of TimerViewState type
+    val timerReducer: Reducer<TimerCommand, TimerViewState, TimerEvent> = Reducer(
+        decider = timerDecider,
         scope = CoroutineScope(Dispatchers.IO),
-        uiMapper = ::TimerViewStateMapper
     )
 }

@@ -6,7 +6,10 @@ import fraktal.io.android.demo.timer.domain.TimerCommand
 @Stable
 data class TimerViewState(
     val timerText: String,
-    val buttons: List<ButtonState>
+    val buttons: List<ButtonState>,
+    val all: Long? = null,
+    val period: Long? = null,
+    val isStopped: Boolean = false,
 ) {
 
     @Stable

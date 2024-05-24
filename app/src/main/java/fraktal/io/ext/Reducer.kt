@@ -11,43 +11,37 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 
-fun <C, S, E> Reducer(
-    decider: Decider<C, S, E>,
-    scope: CoroutineScope
-) = Reducer(decider, scope, { it })
-
 /**
- * Actually, working with YU would make it easier to keep hoist of the state and events in one place.
+ * Simple Reducer.
+ * It belongs to the application layer.
+ * It orchestrates the UI/Infra and the core domain logic (Decider)
  *
- * It seems like a TEA pattern or an MVI variation. But it would be friendly for the Android community.
+ * "This particular Reducer is using only decider, and there is no infrastructure param in the constructor.
+ *  This make sense for this demo, as the events/states are published directly from the Decider by emitting the Time/seconds. There is no DB to read from.
+ *  For example: `repo: StateRepository<C, S>` "
  *
- * Because we need effects that do not require saving (for playing animations or displaying toasts), saving may affect the behavior of the screen when it is recomposed.
  */
-
-class Reducer<C, S, U, E>(
+class Reducer<C, S, E>(
     private val decider: Decider<C, S, E>,
-    private val scope: CoroutineScope,
-    private val uiMapper: (S) -> U,
-
-    private val _states: MutableStateFlow<S> = MutableStateFlow(decider.initialState),
-    private val _uiStates: MutableStateFlow<U> = MutableStateFlow(uiMapper(decider.initialState)),
-    private val commandChannel: Channel<C> = Channel<C>(capacity = CONFLATED),
-
-    private val _events: Channel<E?> = Channel(capacity = CONFLATED),
+    scope: CoroutineScope,
 ) {
-    val uiStates = _uiStates.asStateFlow()
-    val events = _events.consumeAsFlow()
+    private val _states: MutableStateFlow<S> = MutableStateFlow(decider.initialState)
+    private val _commandsChannel: Channel<C> = Channel(capacity = CONFLATED)
+    private val _eventsChannel: Channel<E?> = Channel(capacity = CONFLATED)
+
+    val states = _states.asStateFlow()
+    val events = _eventsChannel.consumeAsFlow()
 
     init {
         scope.launch {
-            commandChannel.consumeAsFlow().collectLatest { command ->
+            _commandsChannel.consumeAsFlow().collectLatest { command ->
                 handle(command)
             }
         }
     }
 
     suspend fun emit(command: C) {
-        commandChannel.send(command)
+        _commandsChannel.send(command)
     }
 
     private suspend fun handle(command: C) {
@@ -55,9 +49,8 @@ class Reducer<C, S, U, E>(
 
         decidedEvents.collect { event ->
             val evolvedValue = decider.evolve(_states.value, event)
-            _events.send(event)
+            _eventsChannel.send(event)
             _states.value = evolvedValue
-            _uiStates.value = uiMapper(evolvedValue)
         }
     }
 }
