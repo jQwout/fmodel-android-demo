@@ -2,6 +2,7 @@ package fraktal.io.ext
 
 
 import com.fraktalio.fmodel.domain.Decider
+import com.fraktalio.fmodel.domain.View
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
@@ -11,10 +12,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 
-fun <C, S, E> Reducer(
-    decider: Decider<C, S, E>,
-    scope: CoroutineScope
-) = Reducer(decider, scope, { it })
 
 /**
  * Actually, working with YU would make it easier to keep hoist of the state and events in one place.
@@ -26,38 +23,40 @@ fun <C, S, E> Reducer(
 
 class Reducer<C, S, U, E>(
     private val decider: Decider<C, S, E>,
-    private val scope: CoroutineScope,
-    private val uiMapper: (S) -> U,
+    private val view: View<U, E>,
+    scope: CoroutineScope,
+    capacity: Int = CONFLATED
+    ) {
+    private val _deciderState: MutableStateFlow<S> = MutableStateFlow(decider.initialState)
+    private val _viewState: MutableStateFlow<U> = MutableStateFlow(view.initialState)
+    private val _commands: Channel<C> = Channel(capacity = capacity)
+    private val _events: Channel<E?> = Channel(capacity = capacity)
 
-    private val _states: MutableStateFlow<S> = MutableStateFlow(decider.initialState),
-    private val _uiStates: MutableStateFlow<U> = MutableStateFlow(uiMapper(decider.initialState)),
-    private val commandChannel: Channel<C> = Channel<C>(capacity = CONFLATED),
-
-    private val _events: Channel<E?> = Channel(capacity = CONFLATED),
-) {
-    val uiStates = _uiStates.asStateFlow()
+    val uiStates = _viewState.asStateFlow()
     val events = _events.consumeAsFlow()
 
     init {
         scope.launch {
-            commandChannel.consumeAsFlow().collectLatest { command ->
+            // Only Collect LATEST is supported ???
+            _commands.consumeAsFlow().collectLatest { command ->
                 handle(command)
             }
         }
     }
 
     suspend fun emit(command: C) {
-        commandChannel.send(command)
+        _commands.send(command)
     }
 
     private suspend fun handle(command: C) {
-        val decidedEvents = decider.decide.invoke(command, _states.value)
+        val decidedEvents = decider.decide.invoke(command, _deciderState.value)
 
         decidedEvents.collect { event ->
-            val evolvedValue = decider.evolve(_states.value, event)
+            val deciderState = decider.evolve(_deciderState.value, event)
+            val viewState = view.evolve(_viewState.value, event)
             _events.send(event)
-            _states.value = evolvedValue
-            _uiStates.value = uiMapper(evolvedValue)
+            _deciderState.value = deciderState
+            _viewState.value = viewState
         }
     }
 }

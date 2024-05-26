@@ -36,7 +36,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun TimerView(
-    reducer: Reducer<TimerCommand, TimerState, TimerViewState, TimerEvent>
+    reducer: Reducer<TimerCommand, TimerState, TimerViewStateUI, TimerEvent>
 ) {
     val uiScope = rememberCoroutineScope()
     val state by reducer.uiStates.collectAsState()
@@ -50,7 +50,11 @@ fun TimerView(
 }
 
 @Composable
-private fun Render(timerState: TimerViewState, timerAnimation: Boolean, onClick: (TimerCommand) -> Unit) {
+private fun Render(
+    timerState: TimerViewStateUI,
+    timerAnimation: Boolean,
+    onClick: (TimerCommand) -> Unit
+) {
     Box(modifier = Modifier.fillMaxSize()) {
         RenderText(timerState.timerText, timerAnimation)
 
@@ -112,11 +116,12 @@ private fun PreviewButtons() {
     Scaffold {
         Box(modifier = Modifier.padding(it))
         Render(
-            timerState = TimerViewState(
+            timerState = TimerViewStateUI(
                 "02:54",
+                100,
                 listOf(
-                    TimerViewState.ButtonState("reset", TimerCommand.Reset),
-                    TimerViewState.ButtonState("resume", TimerCommand.Resume),
+                    TimerViewStateUI.ButtonState("reset", TimerCommand.Reset),
+                    TimerViewStateUI.ButtonState("resume", TimerCommand.Resume),
                 )
             ),
             false,
