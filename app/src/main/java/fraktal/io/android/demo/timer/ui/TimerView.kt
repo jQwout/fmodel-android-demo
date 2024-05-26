@@ -30,21 +30,25 @@ import androidx.compose.ui.unit.sp
 import fraktal.io.android.demo.timer.domain.TimerCommand
 import fraktal.io.android.demo.timer.domain.TimerEvent
 import fraktal.io.android.demo.timer.domain.TimerState
-import fraktal.io.ext.Reducer
+import fraktal.io.ext.EventBus
+import fraktal.io.ext.Aggregate
+import fraktal.io.ext.MaterializedView
 import kotlinx.coroutines.launch
 
 
 @Composable
 fun TimerView(
-    reducer: Reducer<TimerCommand, TimerState, TimerViewStateUI, TimerEvent>
+    aggregate: Aggregate<TimerCommand, TimerState, TimerEvent>,
+    eventBus: EventBus<TimerEvent> = EventBus(),
+    materializedView: MaterializedView<TimerViewStateUI, TimerEvent>
 ) {
     val uiScope = rememberCoroutineScope()
-    val state by reducer.uiStates.collectAsState()
-    val event by reducer.events.collectAsState(initial = null)
+    val state by materializedView.viewStates.collectAsState()
+    val event by eventBus.events.collectAsState(initial = null)
 
     Render(timerState = state, timerAnimation = event is TimerEvent.OnNewTimerCreated) {
         uiScope.launch {
-            reducer.emit(it)
+            aggregate.postCommand(it)
         }
     }
 }
