@@ -27,14 +27,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DemoAndroidTheme {
-                TimerView(DI.aggregate, DI.eventBus, DI.materializedView)
+                TimerView(DI.aggregate, DI.materializedView)
             }
         }
     }
 }
 
 object DI {
-    val eventBus: EventBus<TimerEvent> = EventBus()
+    private val eventBus: EventBus<TimerEvent> = EventBus()
     val aggregate: Aggregate<TimerCommand, TimerState, TimerEvent> =
         Aggregate(timerDecider(), eventBus, CoroutineScope(Dispatchers.IO))
     val materializedView: MaterializedView<TimerViewStateUI, TimerEvent> = MaterializedView(

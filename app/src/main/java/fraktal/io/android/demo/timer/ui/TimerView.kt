@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.sp
 import fraktal.io.android.demo.timer.domain.TimerCommand
 import fraktal.io.android.demo.timer.domain.TimerEvent
 import fraktal.io.android.demo.timer.domain.TimerState
-import fraktal.io.ext.EventBus
 import fraktal.io.ext.Aggregate
 import fraktal.io.ext.MaterializedView
 import kotlinx.coroutines.launch
@@ -39,14 +38,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun TimerView(
     aggregate: Aggregate<TimerCommand, TimerState, TimerEvent>,
-    eventBus: EventBus<TimerEvent> = EventBus(),
     materializedView: MaterializedView<TimerViewStateUI, TimerEvent>
 ) {
     val uiScope = rememberCoroutineScope()
     val state by materializedView.viewStates.collectAsState()
-    val event by eventBus.events.collectAsState(initial = null)
 
-    Render(timerState = state, timerAnimation = event is TimerEvent.OnNewTimerCreated) {
+    Render(timerState = state) {
         uiScope.launch {
             aggregate.postCommand(it)
         }
@@ -56,11 +53,10 @@ fun TimerView(
 @Composable
 private fun Render(
     timerState: TimerViewStateUI,
-    timerAnimation: Boolean,
     onClick: (TimerCommand) -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
-        RenderText(timerState.timerText, timerAnimation)
+        RenderText(timerState.timerText, timerState.isNewTimerCreated)
 
         Row(
             modifier = Modifier
@@ -126,9 +122,9 @@ private fun PreviewButtons() {
                 listOf(
                     TimerViewStateUI.ButtonState("reset", TimerCommand.Reset),
                     TimerViewStateUI.ButtonState("resume", TimerCommand.Resume),
-                )
+                ),
+                false
             ),
-            false,
             onClick = {}
         )
     }

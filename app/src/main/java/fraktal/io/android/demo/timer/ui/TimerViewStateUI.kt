@@ -9,7 +9,8 @@ import java.util.concurrent.TimeUnit
 data class TimerViewStateUI(
     val timerText: String,
     val timer: Long,
-    val buttons: List<ButtonState>
+    val buttons: List<ButtonState>,
+    val isNewTimerCreated: Boolean
 ) {
 
     @Stable
@@ -21,13 +22,15 @@ data class TimerViewStateUI(
 
 fun TimerViewStateUI.asTimerViewState() = TimerViewState(
     timer,
-    actions = buttons.map { TimerViewState.ActionState(it.text, it.command) }
+    buttons.map { TimerViewState.ActionState(it.text, it.command) },
+    isNewTimerCreated
 )
 
 fun TimerViewState.asTimerViewStateUI() = TimerViewStateUI(
     formatTime(timer),
     timer,
-    buttons = actions.map { TimerViewStateUI.ButtonState(it.text, it.command) }
+    actions.map { TimerViewStateUI.ButtonState(it.text, it.command) },
+    isNewTimerCreated
 )
 
 private fun formatTime(milliseconds: Long?): String {

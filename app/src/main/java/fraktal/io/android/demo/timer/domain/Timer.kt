@@ -99,7 +99,8 @@ fun timerDecider(): TimerDecider = TimerDecider(
  */
 data class TimerViewState(
     val timer: Long,
-    val actions: List<ActionState>
+    val actions: List<ActionState>,
+    val isNewTimerCreated: Boolean
 ) {
     data class ActionState(
         val text: String,
@@ -117,30 +118,35 @@ data class TimerViewState(
 fun timerView(): TimerView = TimerView(
     initialState = TimerViewState(
         0,
-        listOf(TimerViewState.ActionState("Start", TimerCommand.Start))
+        listOf(TimerViewState.ActionState("Start", TimerCommand.Start)),
+        false
     ),
     evolve = { state, event ->
         when (event) {
             is TimerEvent.OnNewTimerCreated -> TimerViewState(
                 event.all,
-                listOf(TimerViewState.ActionState("Start", TimerCommand.Start))
+                listOf(TimerViewState.ActionState("Start", TimerCommand.Start)),
+                true
             )
 
             TimerEvent.OnTimerStarted -> state.copy(
                 actions = listOf(
                     TimerViewState.ActionState("Stop", TimerCommand.Stop),
-                )
+                ),
+                isNewTimerCreated = false
             )
 
             TimerEvent.OnTimerStopped -> state.copy(
                 actions = listOf(
                     TimerViewState.ActionState("Resume", TimerCommand.Resume),
                     TimerViewState.ActionState("Reset", TimerCommand.Reset),
-                )
+                ),
+                isNewTimerCreated = false
             )
 
             is TimerEvent.OnTimerTick -> state.copy(
-                timer = state.timer + event.tick
+                timer = state.timer + event.tick,
+                isNewTimerCreated = false
             )
 
             is TimerEvent.OnTimerStartError -> state

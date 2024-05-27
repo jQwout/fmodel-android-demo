@@ -3,8 +3,11 @@ package fraktal.io.ext
 import com.fraktalio.fmodel.domain.Decider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
+import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
@@ -59,9 +62,9 @@ class Aggregate<C, S, E>(
  *
  * https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c
  */
-private class CommandBus<C> {
-    private val _commands = Channel<C>()
-    val commands = _commands.receiveAsFlow() // expose as flow
+private class CommandBus<C>(capacity: Int = BUFFERED) {
+    private val _commands = Channel<C>(capacity = capacity)
+    val commands = _commands.consumeAsFlow() // expose as flow
 
     suspend fun postCommand(command: C) {
         _commands.send(command) // suspends on buffer overflow
