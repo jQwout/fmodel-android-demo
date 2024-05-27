@@ -2,10 +2,10 @@ package fraktal.io.ext
 
 import com.fraktalio.fmodel.domain.Decider
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -60,10 +60,10 @@ class Aggregate<C, S, E>(
  * https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c
  */
 private class CommandBus<C> {
-    private val _commands = MutableSharedFlow<C>()
-    val commands = _commands.asSharedFlow() // read-only public view
+    private val _commands = Channel<C>()
+    val commands = _commands.receiveAsFlow() // expose as flow
 
     suspend fun postCommand(command: C) {
-        _commands.emit(command) // suspends until subscribers receive it
+        _commands.send(command) // suspends on buffer overflow
     }
 }
