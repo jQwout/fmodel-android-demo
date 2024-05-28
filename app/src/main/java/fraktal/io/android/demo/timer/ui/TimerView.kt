@@ -30,29 +30,33 @@ import androidx.compose.ui.unit.sp
 import fraktal.io.android.demo.timer.domain.TimerCommand
 import fraktal.io.android.demo.timer.domain.TimerEvent
 import fraktal.io.android.demo.timer.domain.TimerState
-import fraktal.io.ext.Reducer
+import fraktal.io.ext.Aggregate
+import fraktal.io.ext.MaterializedView
 import kotlinx.coroutines.launch
 
 
 @Composable
 fun TimerView(
-    reducer: Reducer<TimerCommand, TimerState, TimerViewState, TimerEvent>
+    aggregate: Aggregate<TimerCommand, TimerState, TimerEvent>,
+    materializedView: MaterializedView<TimerViewStateUI, TimerEvent>
 ) {
     val uiScope = rememberCoroutineScope()
-    val state by reducer.uiStates.collectAsState()
-    val event by reducer.events.collectAsState(initial = null)
+    val state by materializedView.viewStates.collectAsState()
 
-    Render(timerState = state, timerAnimation = event is TimerEvent.OnNewTimerCreated) {
+    Render(timerState = state) {
         uiScope.launch {
-            reducer.emit(it)
+            aggregate.postCommand(it)
         }
     }
 }
 
 @Composable
-private fun Render(timerState: TimerViewState, timerAnimation: Boolean, onClick: (TimerCommand) -> Unit) {
+private fun Render(
+    timerState: TimerViewStateUI,
+    onClick: (TimerCommand) -> Unit
+) {
     Box(modifier = Modifier.fillMaxSize()) {
-        RenderText(timerState.timerText, timerAnimation)
+        RenderText(timerState.timerText, timerState.isNewTimerCreated)
 
         Row(
             modifier = Modifier
@@ -112,14 +116,15 @@ private fun PreviewButtons() {
     Scaffold {
         Box(modifier = Modifier.padding(it))
         Render(
-            timerState = TimerViewState(
+            timerState = TimerViewStateUI(
                 "02:54",
+                100,
                 listOf(
-                    TimerViewState.ButtonState("reset", TimerCommand.Reset),
-                    TimerViewState.ButtonState("resume", TimerCommand.Resume),
-                )
+                    TimerViewStateUI.ButtonState("reset", TimerCommand.Reset),
+                    TimerViewStateUI.ButtonState("resume", TimerCommand.Resume),
+                ),
+                false
             ),
-            false,
             onClick = {}
         )
     }

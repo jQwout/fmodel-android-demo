@@ -1,19 +1,60 @@
 package fraktal.io.android.demo.timer.domain
 
 import android.util.Log
-import com.fraktalio.fmodel.application.EventSourcingAggregate
-import com.fraktalio.fmodel.application.StateStoredAggregate
 import com.fraktalio.fmodel.domain.Decider
+import com.fraktalio.fmodel.domain.View
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onEmpty
 
 typealias TimerDecider = Decider<TimerCommand, TimerState, TimerEvent>
+typealias TimerView = View<TimerViewState, TimerEvent>
 
-fun timerDecider() : TimerDecider = TimerDecider(
+/**
+ * API: Commands
+ */
+sealed interface TimerCommand {
+    data object Start : TimerCommand
+    data object Resume : TimerCommand
+    data object Stop : TimerCommand
+    data object Reset : TimerCommand
+}
+
+/**
+ * API: Events
+ */
+sealed interface TimerEvent {
+    data class OnNewTimerCreated(
+        val all: Long,
+        val period: Long,
+    ) : TimerEvent
+
+    class OnTimerTick(val tick: Long = 21) : TimerEvent
+
+    data object OnTimerStopped : TimerEvent
+    data object OnTimerStarted : TimerEvent
+
+    data class OnTimerStartError(val t: Throwable) : TimerEvent
+
+    data object OnTimerSpend : TimerEvent
+}
+
+/**
+ * API: The state of the TimerDecider
+ */
+data class TimerState(
+    val all: Long,
+    val period: Long,
+    val isStopped: Boolean
+)
+
+/**
+ * Decider.
+ * Domain layer component that makes the most important decisions/events.
+ */
+fun timerDecider(): TimerDecider = TimerDecider(
     initialState = TimerState(0, 21, false),
     decide = { command, state ->
         when (command) {
@@ -53,32 +94,65 @@ fun timerDecider() : TimerDecider = TimerDecider(
     }
 )
 
-sealed interface TimerCommand {
-    data object Start : TimerCommand
-    data object Resume : TimerCommand
-    data object Stop : TimerCommand
-    data object Reset : TimerCommand
+/**
+ * API: The state of the TimerView
+ */
+data class TimerViewState(
+    val timer: Long,
+    val actions: List<ActionState>,
+    val isNewTimerCreated: Boolean
+) {
+    data class ActionState(
+        val text: String,
+        val command: TimerCommand
+    )
 }
 
-sealed interface TimerEvent {
-    data class OnNewTimerCreated(
-        val all: Long,
-        val period: Long,
-    ) : TimerEvent
+/**
+ * View.
+ * Domain component. It represent the Query side of the CQRS pattern.
+ * It evolves the `View State` based on the events published by the decider.
+ * It is better to use this View State to render your View on the UI,
+ * and you can have many different Timer Views in domain to support different requirements on the Presentation/Ui layer.
+ */
+fun timerView(): TimerView = TimerView(
+    initialState = TimerViewState(
+        0,
+        listOf(TimerViewState.ActionState("Start", TimerCommand.Start)),
+        false
+    ),
+    evolve = { state, event ->
+        when (event) {
+            is TimerEvent.OnNewTimerCreated -> TimerViewState(
+                event.all,
+                listOf(TimerViewState.ActionState("Start", TimerCommand.Start)),
+                true
+            )
 
-    class OnTimerTick(val tick: Long = 21) : TimerEvent
+            TimerEvent.OnTimerStarted -> state.copy(
+                actions = listOf(
+                    TimerViewState.ActionState("Stop", TimerCommand.Stop),
+                ),
+                isNewTimerCreated = false
+            )
 
-    data object OnTimerStopped : TimerEvent
-    data object OnTimerStarted : TimerEvent
+            TimerEvent.OnTimerStopped -> state.copy(
+                actions = listOf(
+                    TimerViewState.ActionState("Resume", TimerCommand.Resume),
+                    TimerViewState.ActionState("Reset", TimerCommand.Reset),
+                ),
+                isNewTimerCreated = false
+            )
 
-    data class OnTimerStartError(val t: Throwable) : TimerEvent
+            is TimerEvent.OnTimerTick -> state.copy(
+                timer = state.timer + event.tick,
+                isNewTimerCreated = false
+            )
 
-    data object OnTimerSpend : TimerEvent
-}
-
-
-data class TimerState(
-    val all: Long,
-    val period: Long,
-    val isStopped: Boolean
+            is TimerEvent.OnTimerStartError -> state
+            is TimerEvent.OnTimerSpend -> state
+        }.apply {
+            Log.d("timerDecider", "evolve($state,$event) = $this")
+        }
+    }
 )
