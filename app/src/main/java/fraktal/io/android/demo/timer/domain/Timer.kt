@@ -1,16 +1,13 @@
 package fraktal.io.android.demo.timer.domain
 
-import android.util.Log
 import com.fraktalio.fmodel.domain.Decider
-import com.fraktalio.fmodel.domain.View
+import fraktal.io.ext.Query
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onEmpty
 
 typealias TimerDecider = Decider<TimerCommand, TimerState, TimerEvent>
-typealias TimerView = View<TimerViewState, TimerEvent>
+typealias TimerQuery = Query<TimerQueryState, TimerEvent>
 
 /**
  * API: Commands
@@ -73,12 +70,6 @@ fun timerDecider(): TimerDecider = TimerDecider(
 
             TimerCommand.Stop -> flowOf(TimerEvent.OnTimerStopped)
         }
-            .onEmpty {
-                Log.d("timerDecider", "decide($command,$state) = empty")
-            }
-            .onEach {
-                Log.d("timerDecider", "decide($command,$state) = $it")
-            }
     },
     evolve = { state, event ->
         when (event) {
@@ -88,16 +79,14 @@ fun timerDecider(): TimerDecider = TimerDecider(
             is TimerEvent.OnTimerTick -> state.copy(all = state.all + event.tick)
             is TimerEvent.OnTimerStartError -> state
             is TimerEvent.OnTimerSpend -> state
-        }.apply {
-            Log.d("timerDecider", "evolve($state,$event) = $this")
         }
     }
 )
 
 /**
- * API: The state of the TimerView
+ * API: The state of the TimerQuery
  */
-data class TimerViewState(
+data class TimerQueryState(
     val timer: Long,
     val actions: List<ActionState>,
     val isNewTimerCreated: Boolean
@@ -109,37 +98,37 @@ data class TimerViewState(
 }
 
 /**
- * View.
+ * Query(originally View) .
  * Domain component. It represent the Query side of the CQRS pattern.
  * It evolves the `View State` based on the events published by the decider.
  * It is better to use this View State to render your View on the UI,
  * and you can have many different Timer Views in domain to support different requirements on the Presentation/Ui layer.
  */
-fun timerView(): TimerView = TimerView(
-    initialState = TimerViewState(
+fun timerQuery(): TimerQuery = TimerQuery(
+    initialState = TimerQueryState(
         0,
-        listOf(TimerViewState.ActionState("Start", TimerCommand.Start)),
+        listOf(TimerQueryState.ActionState("Start", TimerCommand.Start)),
         false
     ),
     evolve = { state, event ->
         when (event) {
-            is TimerEvent.OnNewTimerCreated -> TimerViewState(
+            is TimerEvent.OnNewTimerCreated -> TimerQueryState(
                 event.all,
-                listOf(TimerViewState.ActionState("Start", TimerCommand.Start)),
+                listOf(TimerQueryState.ActionState("Start", TimerCommand.Start)),
                 true
             )
 
             TimerEvent.OnTimerStarted -> state.copy(
                 actions = listOf(
-                    TimerViewState.ActionState("Stop", TimerCommand.Stop),
+                    TimerQueryState.ActionState("Stop", TimerCommand.Stop),
                 ),
                 isNewTimerCreated = false
             )
 
             TimerEvent.OnTimerStopped -> state.copy(
                 actions = listOf(
-                    TimerViewState.ActionState("Resume", TimerCommand.Resume),
-                    TimerViewState.ActionState("Reset", TimerCommand.Reset),
+                    TimerQueryState.ActionState("Resume", TimerCommand.Resume),
+                    TimerQueryState.ActionState("Reset", TimerCommand.Reset),
                 ),
                 isNewTimerCreated = false
             )
@@ -151,8 +140,6 @@ fun timerView(): TimerView = TimerView(
 
             is TimerEvent.OnTimerStartError -> state
             is TimerEvent.OnTimerSpend -> state
-        }.apply {
-            Log.d("timerDecider", "evolve($state,$event) = $this")
         }
     }
 )

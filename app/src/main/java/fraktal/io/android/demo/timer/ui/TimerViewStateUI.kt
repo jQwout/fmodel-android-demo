@@ -2,14 +2,21 @@ package fraktal.io.android.demo.timer.ui
 
 import androidx.compose.runtime.Stable
 import fraktal.io.android.demo.timer.domain.TimerCommand
-import fraktal.io.android.demo.timer.domain.TimerViewState
+import fraktal.io.android.demo.timer.domain.TimerEvent
+import fraktal.io.android.demo.timer.domain.TimerQueryState
+import fraktal.io.android.demo.timer.domain.TimerState
+import fraktal.io.ext.FViewModel
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.toPersistentList
 import java.util.concurrent.TimeUnit
+
+typealias TimerViewModel = FViewModel<TimerCommand,TimerState, TimerViewStateUI, TimerEvent>
 
 @Stable
 data class TimerViewStateUI(
     val timerText: String,
     val timer: Long,
-    val buttons: List<ButtonState>,
+    val buttons: ImmutableList<ButtonState>,
     val isNewTimerCreated: Boolean
 ) {
 
@@ -20,16 +27,16 @@ data class TimerViewStateUI(
     )
 }
 
-fun TimerViewStateUI.asTimerViewState() = TimerViewState(
+fun TimerViewStateUI.asTimerViewState() = TimerQueryState(
     timer,
-    buttons.map { TimerViewState.ActionState(it.text, it.command) },
+    buttons.map { TimerQueryState.ActionState(it.text, it.command) },
     isNewTimerCreated
 )
 
-fun TimerViewState.asTimerViewStateUI() = TimerViewStateUI(
+fun TimerQueryState.asTimerViewStateUI() = TimerViewStateUI(
     formatTime(timer),
     timer,
-    actions.map { TimerViewStateUI.ButtonState(it.text, it.command) },
+    actions.map { TimerViewStateUI.ButtonState(it.text, it.command) }.toPersistentList(),
     isNewTimerCreated
 )
 

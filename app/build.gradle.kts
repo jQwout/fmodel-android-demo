@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.fmodel.domain)
     implementation(libs.fmodel.application.vanilla)
+    implementation(libs.kotlinx.collections.immutable)
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
