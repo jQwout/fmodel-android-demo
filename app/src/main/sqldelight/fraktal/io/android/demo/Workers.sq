@@ -1,0 +1,16 @@
+import fraktal.io.android.demo.shared.models.Gender;
+import fraktal.io.android.demo.shared.models.Position;
+import kotlin.String;
+
+CREATE TABLE workers (
+     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+     first_name TEXT NOT NULL,
+     last_name TEXT NOT NULL,
+     middle_name TEXT NOT NULL,
+     email TEXT NOT NULL,
+     number TEXT NOT NULL,
+     birth_date INTEGER AS String NOT NULL,
+     gender TEXT AS Gender NOT NULL,
+     position TEXT AS Position NOT NULL
+);
+
