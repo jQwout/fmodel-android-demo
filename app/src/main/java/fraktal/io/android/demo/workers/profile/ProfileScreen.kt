@@ -1,11 +1,14 @@
 package fraktal.io.android.demo.workers.profile
 
+
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -22,190 +25,256 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fraktal.io.android.demo.R
 import fraktal.io.android.demo.shared.models.Gender
 import fraktal.io.android.demo.shared.models.Position
+import fraktal.io.android.demo.shared.utils.parseLocalDate
 import fraktal.io.android.demo.theme.DateTransformation
-
-fun ProfileScreen(
-
-) {
-
-}
+import fraktal.io.android.demo.workers.profile.domain.WorkerCommand
+import fraktal.io.android.demo.workers.profile.domain.WorkerEvent
+import fraktal.io.ext.InputItem
 
 
 @Composable
+fun ProfileView(viewModel: WorkerViewModel) {
+    val state by viewModel.state.collectAsState()
+    val events by viewModel.events.collectAsState(initial = null)
+
+    RenderToast(event = events)
+    Render(state = state, onButtonClick = {
+        it ?: return@Render
+        viewModel.post(it)
+    })
+
+    LaunchedEffect(Unit) {
+        viewModel.post(WorkerCommand.LoadById(1))
+    }
+}
+
+@Composable
+fun RenderToast(event: WorkerEvent?) {
+
+    val text = when (event) {
+        is WorkerEvent.OnSavedById -> "User data edited"
+        is WorkerEvent.OnUserCreated -> "New user created"
+        else -> return
+    }
+
+    val ctx = LocalContext.current
+
+    LaunchedEffect(text) {
+        Toast.makeText(ctx, text, Toast.LENGTH_LONG).show()
+    }
+}
+
+@Composable
 private fun Render(
-    firstName: String?,
-    lastName: String?,
-    middleName: String?,
-    email: String?,
-    phoneNumber: String?,
-    date: String?,
-    position: ProfileData.Item<Position>? = null,
-    gender: ProfileData.Item<Gender>? = null,
-
-    firstNameError: Boolean = false,
-    lastNameError: Boolean = false,
-    middleNameError: Boolean = false,
-    emailError: Boolean = false,
-    phoneNumberError: Boolean = false,
-    dateError: Boolean = false,
-
-    isEditMode: Boolean = true,
-    onButtonClick: (Boolean) -> Unit
+    state: WorkerDataUI,
+    onButtonClick: (WorkerCommand.TrySave?) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
+    var mutableState by remember(state.hashCode()) { mutableStateOf(state) }
 
-    var firstNameState by remember { mutableStateOf(firstName) }
-    var lastNameState by remember { mutableStateOf(lastName) }
-    var middleNameState by remember { mutableStateOf(middleName) }
-    var emailState by remember { mutableStateOf(email) }
-    var phoneNumberState by remember { mutableStateOf(phoneNumber) }
-    var positionState by remember {
-        mutableStateOf(position)
-    }
-    var genderState by remember {
-        mutableStateOf(gender)
-    }
-    var dateState by remember {
-        mutableStateOf(date)
-    }
-
-    Box(
+    Scaffold(
         modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 24.dp)
             .imePadding()
+            .navigationBarsPadding()
     ) {
-        Column(
-            modifier = Modifier.verticalScroll(rememberScrollState()),
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .fillMaxSize()
+                .padding(horizontal = 16.dp, vertical = 24.dp)
         ) {
-            TextField(
-                modifier = CommonTextFieldModifier(),
-                value = firstNameState.orEmpty(),
-                isError = firstNameError,
-                onValueChange = { firstNameState = it },
-                placeholder = { PlaceholderText("Enter first name") },
-                enabled = isEditMode,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Text),
-                trailingIcon = {
-                    CommonClearIcon(firstNameState.isNullOrEmpty().not()) {
-                        firstNameState = null
+            Column(
+                modifier = Modifier
+                    .padding(it)
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                InputTextFiled(
+                    mutableState = mutableState.firstName,
+                    placeHolder = "Enter first name",
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        }
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Text),
+                    onStateChange = {
+                        mutableState = mutableState.copy(firstName = it)
                     }
-                }
-            )
-            TextField(
-                modifier = CommonTextFieldModifier(),
-                value = lastNameState.orEmpty(),
-                isError = lastNameError,
-                onValueChange = { lastNameState = it },
-                placeholder = { PlaceholderText("Enter last name") },
-                enabled = isEditMode,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Text),
-                trailingIcon = {
-                    CommonClearIcon(lastNameState.isNullOrEmpty().not()) {
-                        lastNameState = null
+                )
+                InputTextFiled(
+                    mutableState = mutableState.lastName,
+                    placeHolder = "Enter last name",
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        }
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Text),
+                    onStateChange = {
+                        mutableState = mutableState.copy(lastName = it)
                     }
-                }
-            )
-            TextField(
-                modifier = CommonTextFieldModifier(),
-                value = middleNameState.orEmpty(),
-                isError = middleNameError,
-                onValueChange = { middleNameState = it },
-                placeholder = { PlaceholderText("Enter middle name") },
-                enabled = isEditMode,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Text),
-                trailingIcon = {
-                    CommonClearIcon(middleNameState.isNullOrEmpty().not()) {
-                        middleNameState = null
+                )
+                InputTextFiled(
+                    mutableState = mutableState.middleName,
+                    placeHolder = "Enter middle name",
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        }
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Text),
+                    onStateChange = {
+                        mutableState = mutableState.copy(middleName = it)
                     }
-                }
-            )
-            TextField(
-                modifier = CommonTextFieldModifier(),
-                value = emailState.orEmpty(),
-                isError = emailError,
-                onValueChange = { emailState = it },
-                placeholder = { PlaceholderText("Enter email") },
-                enabled = isEditMode,
-                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
-                trailingIcon = {
-                    CommonClearIcon(emailState.isNullOrEmpty().not()) {
-                        emailState = null
+                )
+                InputTextFiled(
+                    mutableState = mutableState.email,
+                    placeHolder = "Enter email",
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        }
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Email),
+                    onStateChange = {
+                        mutableState = mutableState.copy(email = it)
                     }
+                )
+                DropDownMenu(item = mutableState.gender, variants = genders, placeHolder = "Gender") {
+                    mutableState = mutableState.copy(gender = mutableState.gender.putNewData(it))
                 }
-            )
-            DropDownMenu(item = genderState, variants = genders, placeHolder = "Gender") {
-                genderState = it
+                DropDownMenu(item = mutableState.position, variants = positions, placeHolder = "Position") {
+                    mutableState = mutableState.copy(position = mutableState.position.putNewData(it))
+                }
+                InputTextFiled(
+                    mutableState = mutableState.phoneNumber,
+                    placeHolder = "Enter phone number",
+                    maxSymbols = 15,
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        }
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Phone),
+                    onStateChange = {
+                        mutableState = mutableState.copy(phoneNumber = it)
+                    }
+                )
+                InputTextFiled(
+                    mutableState = mutableState.date,
+                    placeHolder = "Enter date of birth",
+                    keyboardActions = KeyboardActions(
+                        onNext = {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        }
+                    ),
+                    maxSymbols = 8,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, keyboardType = KeyboardType.Number),
+                    supportText = "dd/mm/yyyy",
+                    visualTransformation = DateTransformation,
+                    onStateChange = {
+                        mutableState = mutableState.copy(date = it)
+                    }
+                )
             }
-            DropDownMenu(item = positionState, variants = positions, placeHolder = "Position") {
-                positionState = it
-            }
-            TextField(
-                modifier = CommonTextFieldModifier(),
-                value = phoneNumberState.orEmpty(),
-                isError = phoneNumberError,
-                onValueChange = { phoneNumberState = it },
-                placeholder = { PlaceholderText("Enter phone number") },
-                enabled = isEditMode,
-                keyboardActions = KeyboardActions(onNext = {
-                    focusManager.moveFocus(FocusDirection.Down)
-                }),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next, keyboardType = KeyboardType.Phone),
-                trailingIcon = {
-                    CommonClearIcon(phoneNumberState.isNullOrEmpty().not()) {
-                        phoneNumberState = null
-                    }
-                }
-            )
-            TextField(
-                modifier = CommonTextFieldModifier(),
-                value = dateState.orEmpty(),
-                isError = dateError,
-                onValueChange = { if (it.length <= DateTransformation.MAX_DATE_SIZE) dateState = it },
-                placeholder = { PlaceholderText("Enter date of birth") },
-                enabled = isEditMode,
-                keyboardActions = KeyboardActions(onNext = {
-                    focusManager.moveFocus(FocusDirection.Down)
-                }),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, keyboardType = KeyboardType.Decimal),
-                trailingIcon = {
-                    CommonClearIcon(dateState.isNullOrEmpty().not()) {
-                        dateState = null
-                    }
+            Button(
+                onClick = {
+                    onButtonClick(
+                        prepareCommandIfValid(mutableState) {
+                            mutableState = it
+                        }
+                    )
                 },
-                visualTransformation = DateTransformation,
-                supportingText = {
-                    Text("dd/mm/yyyy")
-                }
-            )
-        }
-        Button(
-            onClick = { onButtonClick(isEditMode) },
-            modifier = Modifier.align(alignment = Alignment.BottomCenter)
-        ) {
-            Text(text = if (isEditMode) "Save" else "Edit", modifier = Modifier.padding(horizontal = 32.dp))
+                modifier = Modifier.align(BottomCenter)
+            ) {
+                Text(text = if (mutableState.isNew()) "Save" else "Edit", modifier = Modifier.padding(horizontal = 32.dp))
+            }
         }
     }
+}
+
+@Composable
+private fun <T> InputTextFiled(
+    mutableState: InputItem<T>,
+
+    placeHolder: String,
+    keyboardActions: KeyboardActions,
+    keyboardOptions: KeyboardOptions,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    isEditMode: Boolean = true,
+    supportText: String? = null,
+    maxSymbols: Int? = null,
+
+    onStateChange: (InputItem<T>) -> Unit
+) {
+    val input = mutableState
+
+    TextField(
+        modifier = Modifier
+            .fillMaxWidth(),
+        value = input.dataString,
+        isError = input.hasValidationError,
+        onValueChange = {
+            if (maxSymbols != null && it.length > maxSymbols) {
+                return@TextField
+            }
+            val newData = input.putNewData(it)
+            onStateChange(newData)
+        },
+        placeholder = {
+            Text(text = placeHolder, fontSize = 14.sp, color = Color.Gray)
+        },
+        enabled = isEditMode,
+        keyboardActions = keyboardActions,
+        keyboardOptions = keyboardOptions,
+        trailingIcon = {
+            if (input.data != null) {
+                IconButton(onClick = {
+                    val newData = input.putNewData(null)
+                    onStateChange(newData)
+                }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.baseline_clear_24),
+                        contentDescription = "clear",
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+        },
+        visualTransformation = visualTransformation,
+        maxLines = 1,
+        supportingText = {
+            when {
+                input.hasValidationError && input.errorText != null -> Text(input.errorText)
+                supportText != null -> Text(supportText)
+            }
+        }
+    )
 }
 
 @Composable
@@ -214,30 +283,11 @@ private fun PlaceholderText(text: String) {
 }
 
 @Composable
-private fun CommonTextFieldModifier() = Modifier
-    .padding(bottom = 4.dp)
-    .fillMaxWidth()
-
-@Composable
-private fun CommonClearIcon(
-    isVisible: Boolean,
-    onClick: () -> Unit
-) = IconButton(onClick = onClick) {
-    if (isVisible) {
-        Icon(
-            painter = painterResource(id = R.drawable.baseline_clear_24),
-            contentDescription = "clear",
-            modifier = Modifier.size(18.dp)
-        )
-    }
-}
-
-@Composable
 private fun <T> DropDownMenu(
-    variants: List<ProfileData.Item<T>>,
-    item: ProfileData.Item<T>?,
+    variants: List<InputItem<T>>,
+    item: InputItem<T>?,
     placeHolder: String,
-    onChange: (ProfileData.Item<T>) -> Unit
+    onChange: (T) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
     var expanded by remember { mutableStateOf(false) }
@@ -250,14 +300,15 @@ private fun <T> DropDownMenu(
                 DropdownMenuItem(
                     text = { Text(it.dataString) },
                     onClick = {
-                        onChange(it)
+                        onChange(it.requiredData())
                         expanded = false
                     },
                 )
             }
         }
         TextField(
-            modifier = CommonTextFieldModifier()
+            modifier = Modifier
+                .fillMaxWidth()
                 .clickable {
                     expanded = expanded.not()
                 }
@@ -277,44 +328,61 @@ private fun <T> DropDownMenu(
                 imeAction = ImeAction.Next,
                 keyboardType = KeyboardType.Text
             ),
+            trailingIcon = {
+                if (item?.data != null) {
+                    IconButton(onClick = {
+                        expanded = expanded.not()
+                    }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.baseline_create_24),
+                            contentDescription = "change",
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
+            },
+            supportingText = { },
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
         )
     }
 }
 
+private fun prepareCommandIfValid(
+    state: WorkerDataUI,
+    onChange: (WorkerDataUI) -> Unit
+): WorkerCommand.TrySave? {
+    val newValidate = state.validate()
+    onChange(newValidate)
+    return if (newValidate.hasValidationErrors()) {
+        null
+    } else {
+        // Create and return the WorkerCommand.TrySave command
+        WorkerCommand.TrySave(
+            firstName = newValidate.firstName.requiredData(),
+            lastName = newValidate.lastName.requiredData(),
+            middleName = newValidate.middleName.data.orEmpty(),
+            email = newValidate.email.requiredData(),
+            phoneNumber = newValidate.phoneNumber.requiredData(),
+            date = parseLocalDate(newValidate.date.requiredData())!!,
+            position = newValidate.position.requiredData(),
+            gender = newValidate.gender.requiredData()
+        )
+    }
+}
 
-@Preview
+
 @Composable
-fun Preview() {
+@Preview
+private fun Preview() {
     Scaffold {
         Box(modifier = Modifier.padding(it)) {
-            Render(
-                firstName = "Ivan",
-                lastName = "Ivanov",
-                middleName = "Ivanovich",
-                email = null,
-                phoneNumber = null,
-                date = null,
-                onButtonClick = {}
-            )
+            Render(state = WorkerDataUI(null)) {
+
+            }
         }
     }
 }
 
-@Preview
-@Composable
-private fun PreviewDD() {
-    Scaffold {
-        Box(modifier = Modifier.padding(it)) {
-            DropDownMenu(
-                variants = Position.entries.map { ProfileData.Item(it, it.toString()) },
-                item = null,
-                "Position",
-                onChange = {}
-            )
-        }
-    }
-}
 
-private val genders = Gender.entries.map { ProfileData.Item(it, it.toString()) }
-private val positions = Position.entries.map { ProfileData.Item(it, it.toString()) }
+private val genders = Gender.entries.map { InputItem(data = it) }
+private val positions = Position.entries.map { InputItem(data = it) }

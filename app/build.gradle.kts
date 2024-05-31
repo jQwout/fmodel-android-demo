@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.fmodel.application.vanilla)
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.android.driver)
+    implementation(libs.kotlinx.datetime)
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

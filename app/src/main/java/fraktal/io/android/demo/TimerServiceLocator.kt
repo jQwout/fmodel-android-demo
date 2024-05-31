@@ -19,21 +19,26 @@ import fraktal.io.ext.fViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
-object DI {
+object TimerServiceLocator {
+
     private val eventBus: EventBus<TimerEvent> = EventBus()
+    private val timerDecider = timerDecider()
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val aggregate: Aggregate<TimerCommand, TimerState, TimerEvent> =
-        Aggregate(timerDecider(), eventBus, CoroutineScope(Dispatchers.IO))
+        Aggregate(timerDecider, eventBus, coroutineScope)
     private val materializedView: MaterializedQuery<TimerViewStateUI, TimerEvent> = MaterializedQuery(
         timerQuery().dimapOnState(
             TimerViewStateUI::asTimerViewState,
             TimerQueryState::asTimerViewStateUI
-        ), eventBus, CoroutineScope(Dispatchers.IO)
+        ),
+        eventBus,
+        coroutineScope
     )
-
 
     val timerViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
         initializer {
             fViewModel(materializedView, aggregate)
         }
     }
+
 }

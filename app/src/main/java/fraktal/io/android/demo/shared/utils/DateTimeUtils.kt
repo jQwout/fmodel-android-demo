@@ -1,27 +1,26 @@
 package fraktal.io.android.demo.shared.utils
 
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format
+import kotlinx.datetime.format.char
 
-private val formatterDdMmYyyy = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 
-fun parseDate(dateString: String): LocalDate? {
+private val formatterDdMmYyyy = LocalDate.Format {
+    dayOfMonth()
+    monthNumber();
+     year()
+}
+
+fun parseLocalDate(dateString: String?): LocalDate? {
+    dateString ?: return null
     return try {
-        LocalDate.parse(dateString, formatterDdMmYyyy)
-    } catch (e: DateTimeParseException) {
+        formatterDdMmYyyy.parse(dateString)
+    } catch (e: Throwable) {
         e.printStackTrace()
         null
     }
 }
 
-fun parseDateTime(dateString: String): LocalDateTime? {
-    return try {
-        val localDate = LocalDate.parse(dateString, formatterDdMmYyyy)
-        localDate.atStartOfDay()
-    } catch (e: DateTimeParseException) {
-        e.printStackTrace()
-        null
-    }
+fun LocalDate.toDdMmYyyy(): String {
+    return format(formatterDdMmYyyy)
 }
