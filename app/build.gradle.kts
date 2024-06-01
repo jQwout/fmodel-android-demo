@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
+    id("kotlinx-serialization")
     id("app.cash.sqldelight") version "2.0.2"
 }
 
@@ -62,6 +63,8 @@ dependencies {
     implementation(libs.kotlinx.collections.immutable)
     implementation(libs.android.driver)
     implementation(libs.kotlinx.datetime)
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.core.jvm)
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

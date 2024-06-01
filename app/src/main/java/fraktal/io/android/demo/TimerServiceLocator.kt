@@ -3,6 +3,7 @@ package fraktal.io.android.demo
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import fraktal.io.android.demo.nav.NavLocator
 import fraktal.io.android.demo.timer.domain.TimerCommand
 import fraktal.io.android.demo.timer.domain.TimerEvent
 import fraktal.io.android.demo.timer.domain.TimerState
@@ -25,7 +26,7 @@ object TimerServiceLocator {
     private val timerDecider = timerDecider()
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
     private val aggregate: Aggregate<TimerCommand, TimerState, TimerEvent> =
-        Aggregate(timerDecider, eventBus, coroutineScope)
+        Aggregate(timerDecider, eventBus, NavLocator.navManager, coroutineScope)
     private val materializedView: MaterializedQuery<TimerViewStateUI, TimerEvent> = MaterializedQuery(
         timerQuery().dimapOnState(
             TimerViewStateUI::asTimerViewState,

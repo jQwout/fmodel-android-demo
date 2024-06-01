@@ -19,7 +19,7 @@ class MaterializedQuery<S, E>(
     scope: CoroutineScope,
 ) {
     private val _viewState: MutableStateFlow<S> = MutableStateFlow(view.initialState)
-    private val _eventBusProxy = EventBus<E>()
+    private val _eventBusProxy = MulticastEventBus<E>()
     val viewStates = _viewState.asStateFlow()
     val viewEvents = _eventBusProxy.events
 

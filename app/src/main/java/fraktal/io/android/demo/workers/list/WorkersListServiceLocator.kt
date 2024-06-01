@@ -1,4 +1,4 @@
-package fraktal.io.android.demo.workers.profile
+package fraktal.io.android.demo.workers.list
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
@@ -8,6 +8,13 @@ import fraktal.io.android.demo.nav.NavLocator
 import fraktal.io.android.demo.shared.db.DbLocator
 import fraktal.io.android.demo.shared.models.worker.Worker
 import fraktal.io.android.demo.shared.repository.WorkerRepository
+import fraktal.io.android.demo.workers.list.domain.WorkerList
+import fraktal.io.android.demo.workers.list.domain.WorkerListCommand
+import fraktal.io.android.demo.workers.list.domain.WorkerListEvent
+import fraktal.io.android.demo.workers.list.domain.WorkerListQueryState
+import fraktal.io.android.demo.workers.list.domain.workerListDecider
+import fraktal.io.android.demo.workers.list.domain.workerListQuery
+import fraktal.io.android.demo.workers.profile.asWorkerDataUI
 import fraktal.io.android.demo.workers.profile.domain.WorkerCommand
 import fraktal.io.android.demo.workers.profile.domain.WorkerEvent
 import fraktal.io.android.demo.workers.profile.domain.WorkerQueryState
@@ -20,7 +27,7 @@ import fraktal.io.ext.fViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 
-object WorkerServiceLocator {
+object WorkersListServiceLocator {
 
     private val workerRepository: WorkerRepository
             by lazy {
@@ -28,32 +35,25 @@ object WorkerServiceLocator {
                     DbLocator.database.workersQueries
                 )
             }
-    // can use it for debug
-    //= WorkerRepository.InMemory(
-    //    MutableStateFlow(
-    //        listOf(
-    //            Worker(
-    //                1, "aaa", "bb", "", "email@rt.com", "89256044473",
-    //                Position.DRIVER, Gender.MALE, LocalDate(2000, 3, 4)
-    //            )
-    //        )
-    //    )
-    //)
 
-    private val eventBus: EventBus<WorkerEvent> = EventBus()
-    private val workerDecider = workerDecider(workerRepository)
+    private val eventBus: EventBus<WorkerListEvent> = EventBus()
+    private val decider = workerListDecider(workerRepository)
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private val profileWorkerAggregate: Aggregate<WorkerCommand, Worker?, WorkerEvent> =
-        Aggregate(workerDecider, eventBus, NavLocator.navManager, coroutineScope)
-    private val materializedView: MaterializedQuery<WorkerViewStateUI, WorkerEvent> = MaterializedQuery(
-        workerQuery().dimapOnState(WorkerViewStateUI::asWorkerQueryState, WorkerQueryState?::asWorkerDataUI),
+
+    private val aggregate: Aggregate<WorkerListCommand, WorkerList, WorkerListEvent> =
+        Aggregate(decider, eventBus, NavLocator.navManager, coroutineScope)
+    private val materializedView: MaterializedQuery<WorkersListUI, WorkerListEvent> = MaterializedQuery(
+        workerListQuery().dimapOnState(
+            fl = WorkersListUI::asWorkerListQueryState,
+            fr = WorkerListQueryState::asWorkersListUI
+        ),
         eventBus,
         coroutineScope
     )
 
-    val workerProfile: ViewModelProvider.Factory = viewModelFactory {
-        initializer<WorkerViewModel> {
-            fViewModel(materializedView, profileWorkerAggregate)
+    val workerList: ViewModelProvider.Factory = viewModelFactory {
+        initializer<WorkersListViewModel> {
+            fViewModel(materializedView, aggregate)
         }
     }
 }

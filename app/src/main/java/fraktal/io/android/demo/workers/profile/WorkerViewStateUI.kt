@@ -13,10 +13,10 @@ import fraktal.io.android.demo.workers.profile.domain.WorkerQueryState
 import fraktal.io.ext.FViewModel
 import fraktal.io.ext.InputItem
 
-typealias WorkerViewModel = FViewModel<WorkerCommand, *, WorkerDataUI, WorkerEvent>
+typealias WorkerViewModel = FViewModel<WorkerCommand, *, WorkerViewStateUI, WorkerEvent>
 
 @Stable
-data class WorkerDataUI(
+data class WorkerViewStateUI(
     val id: Long?,
     val firstName: InputItem<String>,
     val lastName: InputItem<String>,
@@ -30,7 +30,7 @@ data class WorkerDataUI(
 
     fun isNew() = id == null
 
-    fun validate() = WorkerDataUI(
+    fun validate() = WorkerViewStateUI(
         id,
         firstName.validate(),
         lastName.validate(),
@@ -57,7 +57,7 @@ data class WorkerDataUI(
     }
 }
 
-fun WorkerDataUI(
+fun WorkerViewStateUI(
     id: Long?,
     firstName: String?,
     lastName: String?,
@@ -67,7 +67,7 @@ fun WorkerDataUI(
     position: Position?,
     gender: Gender?,
     date: String?,
-) = WorkerDataUI(
+) = WorkerViewStateUI(
     id = id,
     firstName = InputItem(
         data = firstName,
@@ -118,9 +118,9 @@ fun WorkerDataUI(
     )
 )
 
-fun WorkerDataUI(
+fun WorkerViewStateUI(
     worker: Worker?
-): WorkerDataUI = WorkerDataUI(
+): WorkerViewStateUI = WorkerViewStateUI(
     worker?.id,
     worker?.firstName,
     worker?.lastName,
@@ -132,7 +132,7 @@ fun WorkerDataUI(
     worker?.date?.toDdMmYyyy()
 )
 
-fun WorkerDataUI.asWorkerQueryState(): WorkerQueryState = WorkerQueryState(
+fun WorkerViewStateUI.asWorkerQueryState(): WorkerQueryState = WorkerQueryState(
     worker = if (hasValidationErrors()) {
         id?.let {
             Worker(
@@ -153,11 +153,11 @@ fun WorkerDataUI.asWorkerQueryState(): WorkerQueryState = WorkerQueryState(
     hasPhoneNumberError = false
 )
 
-fun WorkerQueryState?.asWorkerDataUI(): WorkerDataUI {
+fun WorkerQueryState?.asWorkerDataUI(): WorkerViewStateUI {
     return if (this != null) {
-        val ui = WorkerDataUI(worker)
+        val ui = WorkerViewStateUI(worker)
         ui.copy(phoneNumber = ui.phoneNumber.copy(hasValidationError = hasPhoneNumberError))
     } else {
-        WorkerDataUI(null)
+        WorkerViewStateUI(null)
     }
 }

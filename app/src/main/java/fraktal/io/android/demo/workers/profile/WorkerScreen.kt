@@ -26,12 +26,10 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Modifier
@@ -48,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import fraktal.io.android.demo.R
+
 import fraktal.io.android.demo.shared.models.Gender
 import fraktal.io.android.demo.shared.models.Position
 import fraktal.io.android.demo.shared.utils.parseLocalDate
@@ -55,21 +54,35 @@ import fraktal.io.android.demo.theme.DateTransformation
 import fraktal.io.android.demo.workers.profile.domain.WorkerCommand
 import fraktal.io.android.demo.workers.profile.domain.WorkerEvent
 import fraktal.io.ext.InputItem
+import fraktal.io.ext.NavigationResult
+import kotlinx.serialization.Serializable
 
+@Serializable
+data class EditWorkerNav(val workerId: Long) : NavigationResult
+
+@Serializable
+object CreateWorkerNav : NavigationResult
 
 @Composable
-fun ProfileView(viewModel: WorkerViewModel) {
-    val state by viewModel.state.collectAsState()
-    val events by viewModel.events.collectAsState(initial = null)
+fun WorkerScreen(workerViewModel: WorkerViewModel, workerId: Long?) {
+    val state by workerViewModel.state.collectAsState()
+    val events by workerViewModel.events.collectAsState(initial = null)
 
     RenderToast(event = events)
-    Render(state = state, onButtonClick = {
-        it ?: return@Render
-        viewModel.post(it)
-    })
+    Render(
+        state = state,
+        onButtonClick = {
+            it ?: return@Render
+            workerViewModel.post(it)
+        }
+    )
 
     LaunchedEffect(Unit) {
-        viewModel.post(WorkerCommand.LoadById(1))
+        if (workerId != null) {
+            workerViewModel.post(WorkerCommand.LoadById(workerId))
+        } else {
+            workerViewModel.post(WorkerCommand.LoadClearView)
+        }
     }
 }
 
@@ -91,7 +104,7 @@ fun RenderToast(event: WorkerEvent?) {
 
 @Composable
 private fun Render(
-    state: WorkerDataUI,
+    state: WorkerViewStateUI,
     onButtonClick: (WorkerCommand.TrySave?) -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -348,8 +361,8 @@ private fun <T> DropDownMenu(
 }
 
 private fun prepareCommandIfValid(
-    state: WorkerDataUI,
-    onChange: (WorkerDataUI) -> Unit
+    state: WorkerViewStateUI,
+    onChange: (WorkerViewStateUI) -> Unit
 ): WorkerCommand.TrySave? {
     val newValidate = state.validate()
     onChange(newValidate)
@@ -376,7 +389,7 @@ private fun prepareCommandIfValid(
 private fun Preview() {
     Scaffold {
         Box(modifier = Modifier.padding(it)) {
-            Render(state = WorkerDataUI(null)) {
+            Render(state = WorkerViewStateUI(null)) {
 
             }
         }
