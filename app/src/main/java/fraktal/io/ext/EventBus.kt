@@ -18,3 +18,18 @@ class EventBus<E>(capacity: Int = Channel.BUFFERED) {
         _events.send(event) // suspends on buffer overflow
     }
 }
+
+/**
+ * EventBus with multiply receivers.
+ * EventBus is not an EventStore. It does not store/save events to the storage/DB.
+ *
+ * https://elizarov.medium.com/shared-flows-broadcast-channels-899b675e805c
+ */
+class MulticastEventBus<E>(capacity: Int = Channel.BUFFERED) {
+    private val _events = Channel<E>(capacity = capacity)
+    val events = _events.receiveAsFlow() // expose as flow
+
+    suspend fun postEvent(event: E) {
+        _events.send(event) // suspends on buffer overflow
+    }
+}
