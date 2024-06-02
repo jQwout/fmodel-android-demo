@@ -3,12 +3,11 @@ package fraktal.io.android.demo.workers.profile
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.navigation.NavHostController
 import fraktal.io.android.demo.nav.NavLocator
 import fraktal.io.android.demo.shared.db.DbLocator
-import fraktal.io.android.demo.shared.models.worker.Worker
 import fraktal.io.android.demo.shared.repository.WorkerRepository
 import fraktal.io.android.demo.workers.profile.domain.WorkerCommand
+import fraktal.io.android.demo.workers.profile.domain.WorkerDeciderState
 import fraktal.io.android.demo.workers.profile.domain.WorkerEvent
 import fraktal.io.android.demo.workers.profile.domain.WorkerQueryState
 import fraktal.io.android.demo.workers.profile.domain.workerDecider
@@ -43,7 +42,7 @@ object WorkerServiceLocator {
     private val eventBus: EventBus<WorkerEvent> = EventBus()
     private val workerDecider = workerDecider(workerRepository)
     private val coroutineScope = CoroutineScope(Dispatchers.IO)
-    private val profileWorkerAggregate: Aggregate<WorkerCommand, Worker?, WorkerEvent> =
+    private val profileWorkerAggregate: Aggregate<WorkerCommand, WorkerDeciderState, WorkerEvent> =
         Aggregate(workerDecider, eventBus, NavLocator.navManager, coroutineScope)
     private val materializedView: MaterializedQuery<WorkerViewStateUI, WorkerEvent> = MaterializedQuery(
         workerQuery().dimapOnState(WorkerViewStateUI::asWorkerQueryState, WorkerQueryState?::asWorkerDataUI),

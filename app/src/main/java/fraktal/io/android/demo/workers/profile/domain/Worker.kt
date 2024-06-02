@@ -5,14 +5,15 @@ import fraktal.io.android.demo.shared.models.Gender
 import fraktal.io.android.demo.shared.models.Position
 import fraktal.io.android.demo.shared.models.worker.Worker
 import fraktal.io.android.demo.shared.repository.WorkerRepository
+import fraktal.io.ext.NavigationAR
 import fraktal.io.ext.Query
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.LocalDate
 
 
-typealias WorkerDecider = Decider<WorkerCommand, Worker?, WorkerEvent>
-typealias WorkerQuery = Query<WorkerQueryState?, WorkerEvent>
+typealias WorkerDecider = Decider<WorkerCommand, WorkerDeciderState, WorkerEvent>
+typealias WorkerQuery = Query<WorkerQueryState, WorkerEvent>
 
 sealed interface WorkerCommand {
 
@@ -30,6 +31,8 @@ sealed interface WorkerCommand {
         val gender: Gender,
         val date: LocalDate
     ) : WorkerCommand
+
+    data object Back : WorkerCommand
 }
 
 sealed interface WorkerEvent {
@@ -43,12 +46,19 @@ sealed interface WorkerEvent {
     class OnSavedById(val worker: Worker) : WorkerEvent
 
     class OnUserCreated(val worker: Worker) : WorkerEvent
+
+    class OnBackPressed(val hasChanged: Boolean) : WorkerEvent, NavigationAR
 }
+
+data class WorkerDeciderState(
+    val worker: Worker?,
+    val hasChanged: Boolean,
+)
 
 fun workerDecider(
     workerRepository: WorkerRepository,
 ): WorkerDecider = WorkerDecider(
-    initialState = null,
+    initialState = WorkerDeciderState(null, false),
     decide = { workerCommand, workerState ->
         when (workerCommand) {
 
@@ -62,7 +72,7 @@ fun workerDecider(
 
             is WorkerCommand.TrySave -> flow {
                 val worker = Worker(
-                    workerState?.id ?: generateNewId(workerCommand.phoneNumber),
+                    workerState.worker?.id ?: generateNewId(workerCommand.phoneNumber),
                     workerCommand.firstName,
                     workerCommand.lastName,
                     workerCommand.middleName,
@@ -74,7 +84,7 @@ fun workerDecider(
                 )
 
                 try {
-                    if (workerState?.id == null) {
+                    if (workerState.worker?.id == null) {
                         workerRepository.put(worker)
                         emit(WorkerEvent.OnUserCreated(worker))
                     } else {
@@ -82,20 +92,22 @@ fun workerDecider(
                         emit(WorkerEvent.OnSavedById(worker))
                     }
                 } catch (e: Throwable) {
-                    val s = e.stackTrace
-                    e.localizedMessage
                     emit(WorkerEvent.OnNumberExists(worker))
                 }
+            }
+
+            is WorkerCommand.Back -> flow {
+                emit(WorkerEvent.OnBackPressed(workerState.hasChanged))
             }
         }
     },
     evolve = { state, workerEvent ->
         when (workerEvent) {
-            is WorkerEvent.OnClearForm -> null
-            is WorkerEvent.OnLoaded -> workerEvent.worker
-            is WorkerEvent.OnUserCreated -> workerEvent.worker
-            is WorkerEvent.OnSavedById -> workerEvent.worker
-            else -> null
+            is WorkerEvent.OnClearForm -> state.copy(worker = null, hasChanged = false)
+            is WorkerEvent.OnLoaded -> state.copy(worker = workerEvent.worker, hasChanged = false)
+            is WorkerEvent.OnUserCreated -> state.copy(worker = state.worker, hasChanged = true)
+            is WorkerEvent.OnSavedById -> state.copy(worker = state.worker, hasChanged = true)
+            else -> state
         }
     }
 )
@@ -105,17 +117,19 @@ private fun generateNewId(email: String) = email.hashCode().toLong()
 data class WorkerQueryState(
     val worker: Worker?,
     val hasPhoneNumberError: Boolean,
+    val isEditMode: Boolean = false,
 )
 
 fun workerQuery(): WorkerQuery = WorkerQuery(
-    initialState = null,
+    initialState = WorkerQueryState(null, false, false),
     evolve = { state, workerEvent ->
         when (workerEvent) {
-            is WorkerEvent.OnClearForm -> WorkerQueryState(null, false)
-            is WorkerEvent.OnLoaded -> WorkerQueryState(workerEvent.worker, false)
-            is WorkerEvent.OnNumberExists -> WorkerQueryState(workerEvent.worker, true)
-            is WorkerEvent.OnSavedById -> WorkerQueryState(workerEvent.worker, false)
-            is WorkerEvent.OnUserCreated -> WorkerQueryState(workerEvent.worker, false)
+            is WorkerEvent.OnClearForm -> state.copy(worker = null, hasPhoneNumberError = false)
+            is WorkerEvent.OnLoaded -> state.copy(worker = workerEvent.worker, hasPhoneNumberError = false, isEditMode = true)
+            is WorkerEvent.OnNumberExists -> state.copy(worker = workerEvent.worker, hasPhoneNumberError = true, isEditMode = false)
+            is WorkerEvent.OnSavedById -> state.copy(worker = workerEvent.worker, hasPhoneNumberError = false, isEditMode = true)
+            is WorkerEvent.OnUserCreated -> state.copy(worker = workerEvent.worker, hasPhoneNumberError = false, isEditMode = true)
+            is WorkerEvent.OnBackPressed -> state
         }
     },
 )

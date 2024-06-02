@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -19,6 +20,7 @@ import fraktal.io.android.demo.workers.profile.CreateWorkerNav
 import fraktal.io.android.demo.workers.profile.EditWorkerNav
 import fraktal.io.android.demo.workers.profile.WorkerScreen
 import fraktal.io.android.demo.workers.profile.WorkerServiceLocator
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
@@ -29,7 +31,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
-            NavHost(navController, startDestination = WorkersListScreenNav) {
+            val uiScope = rememberCoroutineScope()
+            NavHost(navController, startDestination = WorkersListScreenNav(true)) {
                 composable<EditWorkerNav> {
                     WorkerScreen(
                         workerViewModel = viewModel(factory = WorkerServiceLocator.workerProfile),
@@ -42,15 +45,20 @@ class MainActivity : ComponentActivity() {
                         workerId = null
                     )
                 }
-                composable<WorkersListScreenNav> { backStackEntry ->
+                composable<WorkersListScreenNav> {
+                    val needLoad = it.toRoute<WorkersListScreenNav>().needLoad
                     WorkersListScreen(
                         viewModel = viewModel(factory = WorkersListServiceLocator.workerList),
+                        needLoad = needLoad,
+                        onCreateNew =  { navController.navigate(CreateWorkerNav) }
                     )
                 }
             }
             LaunchedEffect(Unit) {
-                navManager.navResult.collect {
-                    navController.handle(it)
+                uiScope.launch {
+                    navManager.navResult.collect {
+                        navController.handle(it)
+                    }
                 }
             }
         }

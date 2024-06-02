@@ -25,10 +25,9 @@ data class WorkerViewStateUI(
     val phoneNumber: InputItem<String>,
     val position: InputItem<Position>,
     val gender: InputItem<Gender>,
-    val date: InputItem<String>
+    val date: InputItem<String>,
+    val isEditMode: Boolean,
 ) {
-
-    fun isNew() = id == null
 
     fun validate() = WorkerViewStateUI(
         id,
@@ -39,7 +38,8 @@ data class WorkerViewStateUI(
         phoneNumber.validate(),
         position.validate(),
         gender.validate(),
-        date.validate()
+        date.validate(),
+        isEditMode,
     )
 
     fun hasValidationErrors(): Boolean {
@@ -67,6 +67,7 @@ fun WorkerViewStateUI(
     position: Position?,
     gender: Gender?,
     date: String?,
+    isEditMode: Boolean = false
 ) = WorkerViewStateUI(
     id = id,
     firstName = InputItem(
@@ -115,11 +116,13 @@ fun WorkerViewStateUI(
         validator = {
             Validation.isValidDate(parseLocalDate(it))
         },
-    )
+    ),
+    isEditMode = isEditMode
 )
 
 fun WorkerViewStateUI(
-    worker: Worker?
+    worker: Worker?,
+    isEditMode: Boolean,
 ): WorkerViewStateUI = WorkerViewStateUI(
     worker?.id,
     worker?.firstName,
@@ -129,11 +132,12 @@ fun WorkerViewStateUI(
     worker?.phoneNumber,
     worker?.position,
     worker?.gender,
-    worker?.date?.toDdMmYyyy()
+    worker?.date?.toDdMmYyyy(),
+    isEditMode
 )
 
 fun WorkerViewStateUI.asWorkerQueryState(): WorkerQueryState = WorkerQueryState(
-    worker = if (hasValidationErrors()) {
+    worker = if (hasValidationErrors().not()) {
         id?.let {
             Worker(
                 it,
@@ -155,9 +159,9 @@ fun WorkerViewStateUI.asWorkerQueryState(): WorkerQueryState = WorkerQueryState(
 
 fun WorkerQueryState?.asWorkerDataUI(): WorkerViewStateUI {
     return if (this != null) {
-        val ui = WorkerViewStateUI(worker)
-        ui.copy(phoneNumber = ui.phoneNumber.copy(hasValidationError = hasPhoneNumberError))
+        val ui = WorkerViewStateUI(worker, isEditMode)
+        ui.copy(phoneNumber = ui.phoneNumber.copy(hasValidationError = hasPhoneNumberError, errorText = "this phone already used"))
     } else {
-        WorkerViewStateUI(null)
+        WorkerViewStateUI(null, false)
     }
 }

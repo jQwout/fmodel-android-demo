@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -37,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,25 +51,26 @@ import fraktal.io.android.demo.shared.models.Gender
 import fraktal.io.android.demo.shared.models.Position
 import fraktal.io.android.demo.shared.models.worker.Worker
 import fraktal.io.android.demo.workers.list.domain.WorkerListCommand
+import fraktal.io.ext.NavigationResult
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
 @Serializable
-object WorkersListScreenNav
+data class WorkersListScreenNav(val needLoad: Boolean) : NavigationResult
 
 @Composable
-fun WorkersListScreen(viewModel: WorkersListViewModel) {
+fun WorkersListScreen(viewModel: WorkersListViewModel, needLoad: Boolean, onCreateNew: () -> Unit) {
 
     val state by viewModel.state.collectAsState()
 
     RenderLoader(state.isLoading)
-    Render(workers = state.items, errorText = state.hasError) {
-        viewModel.post(it)
-    }
-    LaunchedEffect(Unit) {
-        viewModel.post(WorkerListCommand.Load)
+    Render(workers = state.items, errorText = state.hasError, onCreateNew = onCreateNew, onClick = viewModel::post)
+    LaunchedEffect(needLoad) {
+        if (needLoad) {
+            viewModel.post(WorkerListCommand.Load)
+        }
     }
 }
 
@@ -88,7 +91,9 @@ fun RenderLoader(isLoading: Boolean) {
                     .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
             ) {
                 CircularProgressIndicator(
-                    modifier = Modifier.padding(16.dp).size(40.dp)
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .size(40.dp)
                 )
             }
         }
@@ -99,7 +104,8 @@ fun RenderLoader(isLoading: Boolean) {
 fun Render(
     workers: ImmutableList<WorkersListUI.WorkerItemUI>,
     errorText: String?,
-    onClick: (WorkerListCommand) -> Unit
+    onClick: (WorkerListCommand) -> Unit,
+    onCreateNew: () -> Unit,
 ) {
     Scaffold(
         modifier = Modifier
@@ -108,7 +114,7 @@ fun Render(
     ) {
         Box(
             modifier = Modifier
-                .padding(it)
+                .padding(top = it.calculateTopPadding())
                 .fillMaxSize()
         ) {
 
@@ -119,7 +125,7 @@ fun Render(
             }
 
             FloatingActionButton(
-                onClick = { onClick(WorkerListCommand.OnCreate) },
+                onClick = { onCreateNew() },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(24.dp),
@@ -154,10 +160,11 @@ fun ListContent(workers: ImmutableList<WorkersListUI.WorkerItemUI>, onClick: (Wo
 }
 
 @Composable
-fun WorkerItem(name: String, role: String, onClick: () -> Unit) {
+fun LazyItemScope.WorkerItem(name: String, role: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .animateItem()
             .clickable {
                 onClick()
             },
@@ -221,7 +228,8 @@ fun WorkerListPreview() {
                     )
                 ).toPersistentList(),
                 errorText = null,
-                onClick = {}
+                onClick = {},
+                onCreateNew = {}
             )
         }
     }
@@ -235,18 +243,13 @@ fun WorkerEmptyListPreview() {
             Render(
                 workers = emptyList<WorkersListUI.WorkerItemUI>().toPersistentList(),
                 errorText = null,
-                onClick = {}
+                onClick = {},
+                onCreateNew = {}
             )
         }
     }
 }
 
-
-@Preview
-@Composable
-fun WorkerItemPreview() {
-    WorkerItem("Estaban Collman", "Manager") {}
-}
 
 @Preview
 @Composable
