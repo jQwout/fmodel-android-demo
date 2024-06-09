@@ -1,0 +1,28 @@
+import kotlin.Boolean;
+
+CREATE TABLE Messages (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    sender_id INTEGER NOT NULL,
+    sender_name TEXT NOT NULL ,
+    time INTEGER NOT NULL,  -- Время в миллисекундах
+    content TEXT NOT NULL,
+    isMe INTEGER AS Boolean DEFAULT 0,
+    FOREIGN KEY (sender_id) REFERENCES workers(id)
+);
+
+
+select:
+SELECT * FROM Messages;
+
+selectById:
+SELECT * FROM Messages WHERE  id = ?;
+
+selectBySenderId:
+SELECT * FROM Messages WHERE sender_id = ?;
+
+insert:
+INSERT INTO Messages (sender_id, sender_name, time, content, isMe)
+VALUES (?,  ?,?, ?, ?);
+
+selectLast:
+SELECT last_insert_rowid();

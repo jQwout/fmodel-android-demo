@@ -50,6 +50,7 @@ import fraktal.io.android.demo.R
 import fraktal.io.android.demo.shared.models.Gender
 import fraktal.io.android.demo.shared.models.Position
 import fraktal.io.android.demo.shared.models.worker.Worker
+import fraktal.io.android.demo.shared.ui.RenderLoader
 import fraktal.io.android.demo.workers.list.domain.WorkerListCommand
 import fraktal.io.ext.NavigationResult
 import kotlinx.collections.immutable.ImmutableList
@@ -74,31 +75,7 @@ fun WorkersListScreen(viewModel: WorkersListViewModel, needLoad: Boolean, onCrea
     }
 }
 
-@Composable
-fun RenderLoader(isLoading: Boolean) {
-    var showDialog by remember(isLoading) {
-        mutableStateOf(isLoading)
-    }
 
-    if (showDialog) {
-        Dialog(
-            onDismissRequest = { showDialog = false },
-            DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .background(MaterialTheme.colorScheme.background, shape = RoundedCornerShape(8.dp))
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .size(40.dp)
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun Render(

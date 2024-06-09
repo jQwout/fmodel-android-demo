@@ -1,6 +1,7 @@
 [versions]
 agp = "8.4.0"
 androidDriver = "2.0.2"
+coroutinesExtensions = "2.0.0-alpha05"
 fmodel = "3.5.0"
 
 kotestRunnerJunit5 = "5.9.0"
@@ -18,9 +19,10 @@ composeBom = "2023.08.00"
 navigationCompose = "2.8.0-alpha08"
 
 [libraries]
-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "androidDriver" }
+sqldelight-android-driver = { module = "app.cash.sqldelight:android-driver", version.ref = "androidDriver" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "coroutinesExtensions" }
 fmodel-application-vanilla = { module = "com.fraktalio.fmodel:application-vanilla", version.ref = "fmodel" }
 fmodel-domain = { module = "com.fraktalio.fmodel:domain", version.ref = "fmodel" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
