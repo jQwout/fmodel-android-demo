@@ -1,4 +1,4 @@
-package fraktal.io.android.demo
+package fraktal.io.android.demo.timer
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer

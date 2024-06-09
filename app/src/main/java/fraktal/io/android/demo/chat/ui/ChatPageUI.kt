@@ -23,7 +23,7 @@ class ChatPageUI(
     )
 }
 
-fun ChatQSE.State.asChatMessageUI() = ChatPageUI(
+fun ChatQSE.State.asChatPageUI() = ChatPageUI(
     messages = list.toPersistentList(),
     pages = pages,
     initLoading = initLoading,

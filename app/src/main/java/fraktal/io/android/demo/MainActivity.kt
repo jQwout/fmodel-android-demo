@@ -4,22 +4,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
+import fraktal.io.android.demo.chat.nav.chatGraph
 import fraktal.io.android.demo.nav.NavLocator
 import fraktal.io.android.demo.nav.handle
-import fraktal.io.android.demo.workers.list.WorkersListScreen
-import fraktal.io.android.demo.workers.list.WorkersListScreenNav
-import fraktal.io.android.demo.workers.list.WorkersListServiceLocator
-import fraktal.io.android.demo.workers.profile.CreateWorkerNav
-import fraktal.io.android.demo.workers.profile.EditWorkerNav
-import fraktal.io.android.demo.workers.profile.WorkerScreen
-import fraktal.io.android.demo.workers.profile.WorkerServiceLocator
+import fraktal.io.android.demo.workers.nav.WorkersGraph
+import fraktal.io.android.demo.workers.nav.workerGraph
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -32,26 +30,18 @@ class MainActivity : ComponentActivity() {
         setContent {
             val navController = rememberNavController()
             val uiScope = rememberCoroutineScope()
-            NavHost(navController, startDestination = WorkersListScreenNav(true)) {
-                composable<EditWorkerNav> {
-                    WorkerScreen(
-                        workerViewModel = viewModel(factory = WorkerServiceLocator.workerProfile),
-                        workerId = it.toRoute<EditWorkerNav>().workerId
-                    )
-                }
-                composable<CreateWorkerNav> {
-                    WorkerScreen(
-                        workerViewModel = viewModel(factory = WorkerServiceLocator.workerProfile),
-                        workerId = null
-                    )
-                }
-                composable<WorkersListScreenNav> {
-                    val needLoad = it.toRoute<WorkersListScreenNav>().needLoad
-                    WorkersListScreen(
-                        viewModel = viewModel(factory = WorkersListServiceLocator.workerList),
-                        needLoad = needLoad,
-                        onCreateNew =  { navController.navigate(CreateWorkerNav) }
-                    )
+            Scaffold(
+                bottomBar = { BottomNavBar(navController = navController) }
+            ) { innerPadding ->
+                Box(
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .navigationBarsPadding()
+                ) {
+                    NavHost(navController, startDestination = WorkersGraph) {
+                        workerGraph(navController)
+                        chatGraph(navController)
+                    }
                 }
             }
             LaunchedEffect(Unit) {

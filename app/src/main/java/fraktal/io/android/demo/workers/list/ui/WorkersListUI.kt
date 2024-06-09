@@ -1,10 +1,6 @@
-package fraktal.io.android.demo.workers.list
+package fraktal.io.android.demo.workers.list.ui
 
 import fraktal.io.android.demo.shared.models.worker.Worker
-import fraktal.io.android.demo.timer.domain.TimerCommand
-import fraktal.io.android.demo.timer.domain.TimerEvent
-import fraktal.io.android.demo.timer.domain.TimerState
-import fraktal.io.android.demo.timer.ui.TimerViewStateUI
 import fraktal.io.android.demo.workers.list.domain.WorkerListCommand
 import fraktal.io.android.demo.workers.list.domain.WorkerListEvent
 import fraktal.io.android.demo.workers.list.domain.WorkerListQueryState

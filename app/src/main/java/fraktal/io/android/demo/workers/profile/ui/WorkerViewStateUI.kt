@@ -1,4 +1,4 @@
-package fraktal.io.android.demo.workers.profile
+package fraktal.io.android.demo.workers.profile.ui
 
 import androidx.compose.runtime.Stable
 import fraktal.io.android.demo.shared.models.Gender

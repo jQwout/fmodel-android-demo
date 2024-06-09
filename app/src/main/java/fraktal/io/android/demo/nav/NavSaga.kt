@@ -3,10 +3,10 @@ package fraktal.io.android.demo.nav
 
 import androidx.navigation.NavHostController
 import com.fraktalio.fmodel.domain.saga
-import fraktal.io.android.demo.workers.list.WorkersListScreenNav
+import fraktal.io.android.demo.workers.list.ui.WorkersListScreenNav
 import fraktal.io.android.demo.workers.list.domain.WorkerListEvent
-import fraktal.io.android.demo.workers.profile.CreateWorkerNav
-import fraktal.io.android.demo.workers.profile.EditWorkerNav
+import fraktal.io.android.demo.workers.profile.ui.CreateWorkerNav
+import fraktal.io.android.demo.workers.profile.ui.EditWorkerNav
 import fraktal.io.android.demo.workers.profile.domain.WorkerEvent
 import fraktal.io.ext.NavigationAR
 import fraktal.io.ext.NavigationResult

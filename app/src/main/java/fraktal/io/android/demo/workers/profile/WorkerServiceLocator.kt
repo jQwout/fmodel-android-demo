@@ -12,6 +12,10 @@ import fraktal.io.android.demo.workers.profile.domain.WorkerEvent
 import fraktal.io.android.demo.workers.profile.domain.WorkerQueryState
 import fraktal.io.android.demo.workers.profile.domain.workerDecider
 import fraktal.io.android.demo.workers.profile.domain.workerQuery
+import fraktal.io.android.demo.workers.profile.ui.WorkerViewModel
+import fraktal.io.android.demo.workers.profile.ui.WorkerViewStateUI
+import fraktal.io.android.demo.workers.profile.ui.asWorkerDataUI
+import fraktal.io.android.demo.workers.profile.ui.asWorkerQueryState
 import fraktal.io.ext.Aggregate
 import fraktal.io.ext.EventBus
 import fraktal.io.ext.MaterializedQuery
