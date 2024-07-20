@@ -4,11 +4,9 @@ import com.fraktalio.fmodel.domain.Decider
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.BUFFERED
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -23,6 +21,7 @@ import kotlinx.coroutines.launch
 class Aggregate<C, S, E>(
     private val decider: Decider<C, S, E>,
     private val eventBus: EventBus<E>,
+    private val navManager: NavManager,
     scope: CoroutineScope,
 ) {
     /**
@@ -52,7 +51,14 @@ class Aggregate<C, S, E>(
         decidedEvents.collect { event ->
             val deciderState = decider.evolve(_deciderState.value, event)
             eventBus.postEvent(event)
+            handle(event)
             _deciderState.value = deciderState
+        }
+    }
+
+    private fun handle(event: E) {
+        if (event is NavigationAR) {
+            navManager.post(event)
         }
     }
 }

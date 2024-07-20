@@ -2,6 +2,8 @@ package fraktal.io.ext
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -25,6 +27,7 @@ abstract class BaseFViewModel<C, S, UiS, E>(
 ) : ViewModel() {
 
     val state = materializedQuery.viewStates
+    val events = materializedQuery.viewEvents
 
     fun post(command: C) = viewModelScope.launch {
         aggregate.postCommand(command)

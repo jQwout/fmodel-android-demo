@@ -1,0 +1,41 @@
+import fraktal.io.android.demo.shared.models.Gender;
+import fraktal.io.android.demo.shared.models.Position;
+
+CREATE TABLE workers (
+     id INTEGER NOT NULL PRIMARY KEY,
+     first_name TEXT NOT NULL,
+     last_name TEXT NOT NULL,
+     middle_name TEXT,
+     email TEXT NOT NULL,
+     number TEXT NOT NULL,
+     birth_date INTEGER NOT NULL,
+     gender TEXT AS Gender NOT NULL,
+     position TEXT AS Position NOT NULL
+);
+
+insert: -- label statement
+INSERT INTO workers -- the statement
+VALUES ?;
+
+getById:
+SELECT * FROM workers
+WHERE workers.id = ?;
+
+getByAll:
+SELECT * FROM workers;
+
+getFirst:
+SELECT * FROM workers ORDER BY id LIMIT 1;
+
+
+updateById:
+UPDATE workers
+SET first_name = ?,
+    last_name = ?,
+    middle_name = ?,
+    email = ?,
+    number =?,
+    birth_date = ?,
+    gender = ?,
+    position = ?
+WHERE id = ?;
