@@ -1,7 +1,6 @@
 package fraktal.io.android.demo.workers.list
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,9 +19,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,15 +39,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.SubcomposeLayout
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import fraktal.io.android.demo.R
 import fraktal.io.android.demo.shared.models.Gender
 import fraktal.io.android.demo.shared.models.Position
 import fraktal.io.android.demo.shared.models.worker.Worker
@@ -159,23 +157,22 @@ fun ListContent(workers: ImmutableList<WorkersListUI.WorkerItemUI>, onClick: (Wo
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LazyItemScope.WorkerItem(name: String, role: String, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .animateItem()
-            .clickable {
-                onClick()
-            },
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            .animateItem(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        onClick = onClick,
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(text = name)
             Spacer(modifier = Modifier.weight(1f))
             Text(text = role, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.width(16.dp))
-            Icon(painter = painterResource(id = R.drawable.id_dots_edit), contentDescription = "edit")
+            Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "edit")
         }
     }
 }
